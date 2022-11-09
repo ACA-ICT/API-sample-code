@@ -79,10 +79,20 @@ namespace ACA.SampleCode.ApiClients.ConsoleNET5
             var code = await codeGrantService.GrantCodeAsync();
             Console.WriteLine($"Code received: {code}");
 
-            Console.WriteLine("Getting access token");
+            Console.WriteLine("Getting access token using granted code");
             var accessTokenService = new AccessTokenService(acaPortalBaseUri, ClientId, redirectUri, ClientSecret);
             var accessToken = await accessTokenService.GetAccessTokenAsync(code);
             Console.WriteLine($"Token data received: {JsonSerializer.Serialize(accessToken)}");
+
+            // NOTE: Access token needs to be refreshed when ExpiresAtUtc date has been reached and there is need to call API endpoint.
+            // RefreshToken is being also reset on every refresh of access token for increased security, so you have to use new value of it during next refresh.
+            // For a sake of running all of sample code without waiting, it will be forced to immediately refresh access token, thus if statement is commented out.
+            //if (accessToken.ExpiresAtUtc <= DateTime.UtcNow)
+            //{
+            Console.WriteLine("Refreshing access token using refresh_token grant.");
+            accessToken = await accessTokenService.RefreshAccessTokenAsync(accessToken.RefreshToken);
+            Console.WriteLine($"New token data received: {JsonSerializer.Serialize(accessToken)}");
+            //}
 
             int exampleOrderId = 100;
             Console.WriteLine($"Calling example api GET OrderOverview endpoint (OrderId = {exampleOrderId})");

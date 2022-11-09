@@ -46,7 +46,7 @@ namespace ACA.SampleCode.ApiClients.ConsoleNET5.Authorization
         /// Gets access token data for authorizing requests sent to ACA API endpoints.
         /// </summary>
         /// <param name="grantedCode">Authorization code that was granted.</param>
-        /// <returns>Task with access token data as result.</returns>
+        /// <returns>Task with access token data as a result.</returns>
         public async Task<AccessToken> GetAccessTokenAsync(string grantedCode)
         {
             var client = new HttpClient();
@@ -62,6 +62,39 @@ namespace ACA.SampleCode.ApiClients.ConsoleNET5.Authorization
                 {"code", grantedCode},
                 {"client_id", _clientId },
                 {"redirect_uri", _redirectUri.AbsoluteUri }
+            };
+
+            var tokenResponse = await client.PostAsync(string.Format(TokenUrlPattern, _acaPortalBaseUrl.AbsoluteUri), new FormUrlEncodedContent(form));
+
+            if (tokenResponse.StatusCode != HttpStatusCode.OK)
+            {
+                throw new Exception($"Invalid auth token response status: {tokenResponse.StatusCode}");
+            }
+
+            var jsonToken = await tokenResponse.Content.ReadAsStringAsync(CancellationToken.None);
+            var accessToken = JsonSerializer.Deserialize<AccessToken>(jsonToken);
+            return accessToken;
+        }
+
+        /// <summary>
+        /// Gets refreshed access token data for authorizing requests sent to ACA API endpoints using refresh_token grant.
+        /// </summary>
+        /// <param name="refreshToken">Refresh token value.</param>
+        /// <returns>Task with refreshed access token data as a result.</returns>
+        public async Task<AccessToken> RefreshAccessTokenAsync(string refreshToken)
+        {
+            var client = new HttpClient();
+
+            var authorizationHeader = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_clientId}:{_clientSecret}"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authorizationHeader);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("cache-control", "no-cache");
+
+            var form = new Dictionary<string, string>
+            {
+                {"grant_type", "refresh_token"},
+                {"refresh_token", refreshToken},
+                {"client_id", _clientId },
             };
 
             var tokenResponse = await client.PostAsync(string.Format(TokenUrlPattern, _acaPortalBaseUrl.AbsoluteUri), new FormUrlEncodedContent(form));

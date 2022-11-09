@@ -14,5 +14,8 @@ namespace ACA.SampleCode.ApiClients.ConsoleNET5.Authorization
         [JsonPropertyName("expires_in")]
         [JsonConverter(typeof(TokenExpireDateJsonConverter))]
         public DateTime ExpiresAtUtc { get; set; }
+
+        [JsonPropertyName("refresh_token")]
+        public string RefreshToken { get; set; }
     }
 }
